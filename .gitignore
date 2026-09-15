@@ -1,0 +1,11 @@
+build/bin
+node_modules
+frontend/dist/*
+!frontend/dist/.gitkeep
+.DS_Store
+*.exe
+*.tar
+*.tar.downloading
+.idea
+.vscode
+*.log

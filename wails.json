@@ -1,0 +1,22 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "HarborDownloader",
+  "outputfilename": "HarborDownloader",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "wailsjsdir": "./frontend",
+  "version": "1.0.0",
+  "author": {
+    "name": "JesseTzh",
+    "email": "jessetzh@gmail.com"
+  },
+  "info": {
+    "companyName": "HarborDownloader",
+    "productName": "Harbor Downloader",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright 2026",
+    "comments": "Download Harbor images and export Docker-compatible TAR files without Docker Engine"
+  }
+}

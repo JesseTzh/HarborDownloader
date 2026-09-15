@@ -1,0 +1,191 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "发布版本（如 v1.0.0）。留空则发布 nightly。"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+
+jobs:
+  windows:
+    name: Build and publish Windows exe
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install NSIS
+        run: |
+          choco install nsis -y --no-progress
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Resolve version
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse --short HEAD)"
+          BUILD_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+            CHANNEL=release
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            TAG="${INPUT_VERSION}"
+            [[ "${TAG}" == v* ]] || TAG="v${TAG}"
+            VERSION="${TAG#v}"
+            CHANNEL=release
+          else
+            TAG=nightly
+            VERSION="0.0.0-nightly.${GITHUB_RUN_NUMBER}"
+            CHANNEL=nightly
+          fi
+
+          {
+            echo "tag=${TAG}"
+            echo "version=${VERSION}"
+            echo "commit=${COMMIT}"
+            echo "build_at=${BUILD_AT}"
+            echo "channel=${CHANNEL}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p frontend/dist
+          if [[ ! -f frontend/dist/.gitkeep && ! -f frontend/dist/index.html ]]; then
+            printf '' > frontend/dist/.gitkeep
+          fi
+          go test ./...
+
+      - name: Build Windows amd64
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$(go env GOPATH | tr '\\' '/')/bin:${PATH}"
+          wails build \
+            -platform windows/amd64 \
+            -nsis \
+            -webview2 download \
+            -ldflags "-X main.Version=${{ steps.meta.outputs.version }} -X main.Commit=${{ steps.meta.outputs.commit }} -X main.BuildAt=${{ steps.meta.outputs.build_at }}"
+          ls -la build/bin
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          test -f build/bin/HarborDownloader.exe
+          cp build/bin/HarborDownloader.exe dist/HarborDownloader-windows-amd64.exe
+          if [[ -f build/bin/HarborDownloader-amd64-installer.exe ]]; then
+            cp build/bin/HarborDownloader-amd64-installer.exe dist/HarborDownloader-windows-amd64-setup.exe
+          fi
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          dist = Path("dist")
+          lines = []
+          for path in sorted(dist.glob("*.exe")):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              lines.append(f"{digest}  {path.name}")
+          (dist / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          PY
+          ls -la dist
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HarborDownloader-windows-amd64
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(dist/*)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "no artifacts to publish" >&2
+            exit 1
+          fi
+
+          if [[ "${CHANNEL}" == nightly ]]; then
+            gh release view "${TAG}" >/dev/null 2>&1 && gh release delete "${TAG}" --cleanup-tag --yes || true
+            gh release create "${TAG}" "${files[@]}" \
+              --target "${GITHUB_SHA}" \
+              --title "Harbor Downloader Nightly" \
+              --notes "自动构建自 \`${GITHUB_SHA:0:7}\`（main）。仅供试用；正式版本请下载带 \`v\` 前缀的 Release。
+
+          - 便携版：\`HarborDownloader-windows-amd64.exe\`（解压即可运行）
+          - 安装包：\`HarborDownloader-windows-amd64-setup.exe\`
+          - 校验：\`SHA256SUMS.txt\`" \
+              --prerelease \
+              --latest=false
+            exit 0
+          fi
+
+          NOTES="$(mktemp)"
+          cat > "${NOTES}" <<EOF
+          Harbor Downloader ${VERSION}
+
+          - 便携版：\`HarborDownloader-windows-amd64.exe\`
+          - 安装包：\`HarborDownloader-windows-amd64-setup.exe\`
+          - 校验：\`SHA256SUMS.txt\`
+
+          Windows 10/11 x64。不需要 Docker Engine。若系统缺少 WebView2 Runtime，安装包会提示下载。
+          EOF
+
+          if [[ -n "${{ github.event.inputs.version }}" ]] && ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${TAG}"
+          fi
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${files[@]}" --clobber
+            gh release edit "${TAG}" --title "Harbor Downloader ${VERSION}" --notes-file "${NOTES}"
+          else
+            gh release create "${TAG}" "${files[@]}" \
+              --title "Harbor Downloader ${VERSION}" \
+              --notes-file "${NOTES}"
+          fi

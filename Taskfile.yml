@@ -1,0 +1,25 @@
+version: "3"
+
+tasks:
+  dev:
+    cmds:
+      - wails dev
+  test:
+    cmds:
+      - go test ./...
+  build:
+    cmds:
+      - wails build
+  build:windows:
+    cmds:
+      - wails build -platform windows/amd64 -nsis -webview2 download -ldflags "-X main.Version=1.0.0"
+  release:
+    desc: Create and push a version tag to trigger GitHub Release
+    vars:
+      VERSION: '{{.VERSION}}'
+    preconditions:
+      - sh: test -n "{{.VERSION}}"
+        msg: "Usage: task release VERSION=v1.0.0"
+    cmds:
+      - git tag {{.VERSION}}
+      - git push origin {{.VERSION}}
