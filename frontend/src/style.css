@@ -105,7 +105,7 @@ body {
 .summary-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   margin-bottom: 0;
 }
@@ -175,6 +175,66 @@ input:disabled, select:disabled, button:disabled {
   margin: 4px 0 12px;
 }
 
+.label-with-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint-mark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #b7c0cc;
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.hint-mark:hover,
+.hint-mark:focus {
+  color: var(--accent);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.hint-pop {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hint-mark:hover .hint-pop,
+.hint-mark:focus .hint-pop,
+.hint-mark:focus-visible .hint-pop {
+  display: block;
+}
+
 .actions {
   display: flex;
   gap: 8px;
@@ -197,7 +257,7 @@ input:disabled, select:disabled, button:disabled {
 }
 
 .btn.primary {
-  min-width: 160px;
+  min-width: 0;
 }
 
 .btn.ghost {
@@ -500,8 +560,8 @@ input:disabled, select:disabled, button:disabled {
 
 .job-item {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 6px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -511,14 +571,29 @@ input:disabled, select:disabled, button:disabled {
   padding-bottom: 0;
 }
 
-.job-item-main {
+.job-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   min-width: 0;
+}
+
+.job-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-item-meta {
+  margin: 0;
 }
 
 .job-images {
   list-style: none;
   padding: 0;
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -527,9 +602,15 @@ input:disabled, select:disabled, button:disabled {
 
 .job-item-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.job-item-actions .btn {
+  height: 32px;
+  padding: 0 12px;
 }
 
 .job-image-block {
@@ -563,7 +644,7 @@ input:disabled, select:disabled, button:disabled {
   flex-shrink: 0;
   font-size: 13px;
   color: var(--muted);
-  width: 48px;
+  width: auto;
 }
 
 .job-image-tag input {
@@ -624,7 +705,7 @@ input:disabled, select:disabled, button:disabled {
 }
 
 @media (max-width: 720px) {
-  .job-item,
+  .job-item-head,
   .job-result-item,
   .pack-result,
   .job-image-row {

@@ -70,7 +70,7 @@ jobs:
             CHANNEL=release
           else
             TAG=nightly
-            VERSION="0.0.0-nightly.${GITHUB_RUN_NUMBER}"
+            VERSION="$(date -u +%y%m%d)-nightly.${GITHUB_RUN_NUMBER}"
             CHANNEL=nightly
           fi
 
@@ -154,8 +154,8 @@ jobs:
             gh release view "${TAG}" >/dev/null 2>&1 && gh release delete "${TAG}" --cleanup-tag --yes || true
             gh release create "${TAG}" "${files[@]}" \
               --target "${GITHUB_SHA}" \
-              --title "Harbor Downloader Nightly" \
-              --notes "自动构建自 \`${GITHUB_SHA:0:7}\`（main）。仅供试用；正式版本请下载带 \`v\` 前缀的 Release。
+              --title "Harbor Downloader ${VERSION}" \
+              --notes "自动构建自 \`${GITHUB_SHA:0:7}\`（main），版本 \`${VERSION}\`。仅供试用；正式版本请下载带 \`v\` 前缀的 Release。
 
           - 便携版：\`HarborDownloader-windows-amd64.exe\`（解压即可运行）
           - 安装包：\`HarborDownloader-windows-amd64-setup.exe\`

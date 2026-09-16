@@ -50,7 +50,7 @@ GitHub Actions 会自动构建 Windows amd64 可执行文件并发布到 [Releas
 | `SHA256SUMS.txt` | SHA-256 校验 |
 
 - 推送标签 `v1.0.0`：发布正式版
-- 推送到 `main`：更新名为 `nightly` 的预发布（会被覆盖）
+- 推送到 `main`：更新名为 `nightly` 的预发布（会被覆盖），版本号为 `YYMMdd-nightly.x`（`x` 为构建序号）
 - 在 Actions 里手动运行 **Release Windows**，可填写版本号（如 `v1.0.0`）
 
 ```bash

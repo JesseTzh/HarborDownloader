@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
+import HintMark from './HintMark.vue'
 import type { ImageReference, Job, JobImage, Platform } from '../types'
 
 const props = defineProps<{
@@ -118,12 +119,14 @@ defineExpose({ setParseResult })
     <label class="check">
       <input v-model="pack" :disabled="disabled" type="checkbox" />
       是否打包
+      <HintMark text="勾选后，全部 TAR 下载完成后会合并并使用 zstd -19 压缩为 all.tar.zst。下载目录在「设置」中配置，本任务会自动使用同名子文件夹。" />
     </label>
-    <p class="hint">勾选后，全部 TAR 下载完成后会合并并使用 zstd -19 压缩为 all.tar.zst。下载目录在「设置」中配置，本任务会自动使用同名子文件夹。</p>
 
     <div class="field">
-      <label>镜像列表</label>
-      <p class="hint">每个镜像可单独选择平台，并可填写「保存为」：导出的 TAR 会以该名称作为 docker load 后的镜像 tag，文件名也按该名称生成。留空则保持原镜像名。</p>
+      <label class="label-with-hint">
+        镜像列表
+        <HintMark text="每个镜像可单独选择平台，并可填写「保存为」：导出的 TAR 会以该名称作为 docker load 后的镜像 tag，文件名也按该名称生成。留空则保持原镜像名。" />
+      </label>
     </div>
 
     <div v-for="(img, i) in images" :key="i" class="job-image-block">
@@ -149,7 +152,10 @@ defineExpose({ setParseResult })
         · Tag <strong>{{ parsed[i]!.tag || parsed[i]!.digest }}</strong>
       </p>
       <div class="job-image-tag">
-        <label :for="'job-target-' + i">保存为</label>
+        <label :for="'job-target-' + i" class="label-with-hint">
+          保存为
+          <HintMark text="每个镜像可单独选择平台，并可填写「保存为」：导出的 TAR 会以该名称作为 docker load 后的镜像 tag，文件名也按该名称生成。留空则保持原镜像名。" />
+        </label>
         <input
           v-model="img.targetTag"
           :disabled="disabled"

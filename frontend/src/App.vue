@@ -48,7 +48,15 @@ import { EventsOff, EventsOn } from '../wailsjs/runtime/runtime'
 type Tab = 'tasks' | 'settings' | 'cache'
 type TaskView = 'list' | 'editor'
 
-const version = ref('dev')
+function fallbackVersion() {
+  const d = new Date()
+  const yy = String(d.getFullYear()).slice(-2)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yy}${mm}${dd}-nightly.0`
+}
+
+const version = ref(fallbackVersion())
 const tab = ref<Tab>('tasks')
 const taskView = ref<TaskView>('list')
 const ui = ref<UiState>('IDLE')
@@ -110,14 +118,6 @@ function applyPasswordState(saved: boolean, typed = '') {
 }
 
 const registryDirty = computed(() => registrySnapshot() !== savedSnapshot.value)
-
-const registrySummary = computed(() => {
-  const host = registry.value.trim()
-  if (!host) return '尚未配置仓库'
-  const user = username.value.trim() || '未填写用户名'
-  const tls = insecure.value ? '跳过 TLS 校验' : '校验 TLS'
-  return `${host} · ${user} · ${tls}`
-})
 
 const defaultPlatform = computed(
   () => platforms.value[0] || { os: 'linux', architecture: 'amd64' }
@@ -684,16 +684,6 @@ const showResult = computed(() => ui.value === 'SUCCESS' || ui.value === 'FAILED
     </header>
 
     <template v-if="tab === 'tasks'">
-      <section v-if="showForm" class="card">
-        <header class="card-head summary-head">
-          <div>
-            <h2>仓库</h2>
-            <p class="hint summary-meta">{{ registrySummary }}</p>
-          </div>
-          <button class="btn ghost" type="button" @click="onTab('settings')">设置</button>
-        </header>
-      </section>
-
       <JobList
         v-if="showForm && taskView === 'list'"
         :jobs="jobs"

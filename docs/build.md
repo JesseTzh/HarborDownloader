@@ -22,7 +22,7 @@ WebView2 缺失时采用 `download` 策略，安装包保持较小体积。
 版本信息可通过 ldflags 注入：
 
 ```bash
-go build -ldflags "-X main.Version=1.0.0 -X main.Commit=$(git rev-parse --short HEAD) -X main.BuildAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+go build -ldflags "-X main.Version=$(date -u +%y%m%d)-nightly.0 -X main.Commit=$(git rev-parse --short HEAD) -X main.BuildAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 Wails 构建时同样可在 `-ldflags` 中传入。

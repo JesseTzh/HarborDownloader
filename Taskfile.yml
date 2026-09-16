@@ -11,8 +11,11 @@ tasks:
     cmds:
       - wails build
   build:windows:
+    vars:
+      VERSION:
+        sh: date -u +%y%m%d
     cmds:
-      - wails build -platform windows/amd64 -nsis -webview2 download -ldflags "-X main.Version=1.0.0"
+      - wails build -platform windows/amd64 -nsis -webview2 download -ldflags "-X main.Version={{.VERSION}}-nightly.0"
   release:
     desc: Create and push a version tag to trigger GitHub Release
     vars:

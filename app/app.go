@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -27,11 +29,19 @@ type App struct {
 
 func New(version, commit, buildAt string) *App {
 	return &App{
-		version: version,
+		version: formatVersion(version),
 		commit:  commit,
 		buildAt: buildAt,
 		cred:    credential.New(),
 	}
+}
+
+func formatVersion(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" || v == "dev" {
+		return time.Now().Format("060102") + "-nightly.0"
+	}
+	return v
 }
 
 func (a *App) Startup(ctx context.Context) {
